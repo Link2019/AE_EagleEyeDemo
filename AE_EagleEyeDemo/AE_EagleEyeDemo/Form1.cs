@@ -71,12 +71,53 @@ namespace AE_EagleEyeDemo
             IElement pElement = pRectangleElement as IElement;
             //赋值几何实体的最小外接矩形, 即包络线
             pElement.Geometry = pEnvelope;
+
+            //使用面要素刷新(存在覆盖注释问题)
+            //DrawPolyline2(pGraphicsContainer, pActiveView, pElement);
+
+            //使用点要素刷新(已解决重叠问题)(推荐使用)
             //使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
             DrawPolyline(axMapControl2.ActiveView, pEnvelope);
 
-
         }
         /// <summary>
+        /// 使用面要素刷新(存在覆盖注释问题)
+        /// </summary>
+        /// <param name="pGraphicsContainer"></param>
+        /// <param name="pActiveView"></param>
+        /// <param name="pElement"></param>
+        private static void DrawPolyline2(IGraphicsContainer pGraphicsContainer, IActiveView pActiveView, IElement pElement)
+        {
+            IRgbColor pColor = new RgbColorClass();
+            pColor.Red = 255;
+            pColor.Green = 0;
+            pColor.Blue = 0;
+            pColor.Transparency = 255;
+
+            //new a line symbol object.
+            ILineSymbol pOutline = new SimpleLineSymbolClass();
+            pOutline.Width = 2;
+            pOutline.Color = pColor;
+
+            pColor = new RgbColorClass();
+            //背景颜色为空
+            pColor.NullColor = true;
+
+            IFillSymbol pFillSymbol = new SimpleFillSymbolClass();
+            pFillSymbol.Color = pColor;
+            pFillSymbol.Outline = pOutline;
+
+            //area shape
+            IFillShapeElement pFillShapeElement = pElement as IFillShapeElement;
+            pFillShapeElement.Symbol = pFillSymbol;
+
+            pGraphicsContainer.AddElement((IElement)pFillShapeElement, 0);
+            //刷新鹰眼视图的填充要素（绘图框）
+            pActiveView.PartialRefresh(esriViewDrawPhase.esriViewGraphics, pFillShapeElement, null);
+        }
+
+        /// <summary>
+        /// 使用点要素刷新(已解决重叠问题)(推荐使用)
         /// 使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
         /// </summary>
         /// <param name="activeView">鹰眼视图的活动窗体</param>
