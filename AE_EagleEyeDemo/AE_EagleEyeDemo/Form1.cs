@@ -148,34 +148,10 @@ namespace AE_EagleEyeDemo
         {
             loadMapDoc2();
         }
-        /// <summary>
-        /// 鹰眼地图的OnMouseMove事件
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void axMapControl2_OnMouseMove(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMouseMoveEvent e)
-        {
-            /*
-            //如果e.button==1, 则表示按下的是鼠标左键
-            if (e.button == 1)
-            {
-                axMapControl2.Refresh();
-                //捕捉鼠标单击时的地图坐标
-                IPoint pPoint = new PointClass();
-                pPoint.PutCoords(e.mapX, e.mapY);
-                //将地图的中心点移动到鼠标点击的点pPoint
-                axMapControl1.CenterAt(pPoint);
-                axMapControl1.ActiveView.PartialRefresh(esriViewDrawPhase.esriViewGeography, null, null);
-            }
-            */
-        }
 
-        #region 加载mxd地图文档
+
         private void 加载mxd地图文档toolStripLabel1_Click(object sender, EventArgs e)
         {
-            //方法一：
-            //loadMapDoc1();//调用MapControl控件的LoadMxFile方法
-
             //方法二：
             loadMapDoc2();
         }
@@ -192,9 +168,9 @@ namespace AE_EagleEyeDemo
                 ofd.Filter = "map documents(*.mxd)|*.mxd";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
-                    string filePath = ofd.FileName;
-                    //filePath——地图文档的路径, ""——赋予默认密码
-                    mapDocument.Open(filePath, "");
+                    string pFileName = ofd.FileName;
+                    //pFileName——地图文档的路径, ""——赋予默认密码
+                    mapDocument.Open(pFileName, "");
                     for (int i = 0; i < mapDocument.MapCount; i++)
                     {
                         //通过get_Map(i)方法逐个加载
@@ -214,36 +190,19 @@ namespace AE_EagleEyeDemo
 
         }
 
-        /// <summary>
-        /// 方法一：运用LoadMxFile方法的函数参数加载地图文档
-        /// </summary>
-        private void loadMapAccDoc1()
+        private void axMapControl2_OnMouseMove(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMouseMoveEvent e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "打开地图文档";
-            ofd.Filter = "map documents(*.mxd)|*.mxd";
-            ofd.InitialDirectory = m_Path;
-            //判断, 如果对话框结构不为OK, 退出函数体
-            DialogResult DR = ofd.ShowDialog();
-            if (DR != DialogResult.OK)
-                return;
-            string filePath = ofd.FileName;
-            if (axMapControl1.CheckMxFile(filePath))
+            //如果e.button==1, 则表示按下的是鼠标左键
+            if (e.button == 1)
             {
-                //设置axMapControl控制鼠标指针图标选项为沙漏光标
-                axMapControl1.MousePointer = ESRI.ArcGIS.Controls.esriControlsMousePointer.esriPointerArrowHourglass;
-                //三个参数（filePath——文件路径、0——地址名称或索引、Type.Missing——通过反射进行调用获取参数的默认值）
-                axMapControl1.LoadMxFile(filePath, 0, Type.Missing);
-                //定义axMapControl控制鼠标指针图标为默认箭头
-                axMapControl1.MousePointer = ESRI.ArcGIS.Controls.esriControlsMousePointer.esriPointerDefault;
-                axMapControl1.Extent = axMapControl1.FullExtent;
-            }
-            else
-            {
-                MessageBox.Show(filePath + "不是有效的地图文档");
+                axMapControl2.Refresh();
+                //捕捉鼠标单击时的地图坐标
+                IPoint pPoint = new PointClass();
+                pPoint.PutCoords(e.mapX, e.mapY);
+                //将地图的中心点移动到鼠标点击的点pPoint
+                axMapControl1.CenterAt(pPoint);
+                axMapControl1.ActiveView.PartialRefresh(esriViewDrawPhase.esriViewGeography, null, null);
             }
         }
-        #endregion
-
     }
 }
