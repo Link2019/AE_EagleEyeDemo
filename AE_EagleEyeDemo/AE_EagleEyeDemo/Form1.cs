@@ -1,4 +1,9 @@
-﻿using System;
+﻿using ESRI.ArcGIS.Carto;
+using ESRI.ArcGIS.DataSourcesFile;
+using ESRI.ArcGIS.Display;
+using ESRI.ArcGIS.Geodatabase;
+using ESRI.ArcGIS.Geometry;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,9 +17,233 @@ namespace AE_EagleEyeDemo
 {
     public partial class Form1 : Form
     {
+        private string m_Path = Application.StartupPath + @"\Data";
         public Form1()
         {
             InitializeComponent();
         }
+        /// <summary>
+        /// 主地图OnMapReplaced事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void axMapControl1_OnMapReplaced(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMapReplacedEvent e)
+        {
+            //主地图有地图或图层的时候鹰眼加载图层
+            if (axMapControl1.LayerCount > 0)
+            {
+                axMapControl2.ClearLayers(); //先清除鹰眼的地图
+                //图层自下而上加载，防止要素间互相压盖
+                for (int i = axMapControl1.Map.LayerCount - 1; i >= 0; i--)
+                {
+                    axMapControl2.AddLayer(axMapControl1.get_Layer(i));
+                }
+                //设置鹰眼地图鱼主地图相同空间参考系
+                //必要：防止由于图层放置顺序改变而改变了鹰眼的空间参考系
+                axMapControl2.SpatialReference = axMapControl1.SpatialReference;
+                //设置鹰眼的显示范围=完整显示（FullExtent)
+                axMapControl2.Extent = axMapControl2.FullExtent;
+                //每次加载或者删除图层之后都要刷新一次MapControl
+                axMapControl2.Refresh();
+            }
+        }
+        /// <summary>
+        /// 主地图OnExtentUpdated事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void axMapControl1_OnExtentUpdated(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnExtentUpdatedEvent e)
+        {
+            //刷新axMapControl2
+            axMapControl2.Refresh();
+            //以主地图的Extent作为鹰眼红线框的大小范围
+            IEnvelope pEnvelope = axMapControl1.Extent;
+            //鹰眼强制转换为IGraphicsContainer
+            //IGraphicsContainer是绘图容器接口, 主要功能是在MapControl控件类上添加绘图要素。
+            IGraphicsContainer pGraphicsContainer = axMapControl2.Map as IGraphicsContainer;
+            //鹰眼强制转换为pActiveView
+            IActiveView pActiveView = pGraphicsContainer as IActiveView;
+            //删除鹰眼原有要素
+            pGraphicsContainer.DeleteAllElements();
+            //实例化矩形框要素
+            IRectangleElement pRectangleElement = new RectangleElementClass();
+            //强转矩形要素框为要素
+            IElement pElement = pRectangleElement as IElement;
+            //赋值几何实体的最小外接矩形, 即包络线
+            pElement.Geometry = pEnvelope;
+            //使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
+            DrawPolyline(axMapControl2.ActiveView, pEnvelope);
+
+
+        }
+        /// <summary>
+        /// 使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
+        /// </summary>
+        /// <param name="activeView">鹰眼视图的活动窗体</param>
+        /// <param name="geometry">制框范围</param>
+        private void DrawPolyline(IActiveView activeView, IGeometry geometry)
+        {
+            if (activeView == null)
+                return; //如果活动窗体为空, 则返回
+            //强行刷新鹰眼视图, 目的: 清除前一次的绘图框, 避免重复绘图框
+            axMapControl2.ActiveView.ScreenDisplay.UpdateWindow(); //解决重复绘图框的关键代码
+            IScreenDisplay screenDisplay = activeView.ScreenDisplay;
+            //Screen的绘图状态处于准备状态
+            //参数: (指定设备(Dc=Device), 缓冲区(-1=NoScreenCache,-2=AllScreenCache, -3=ScreenRecoding))
+            //解析: 设备(Device)参数指图形的绘制区域
+            //缓冲区(Cache)参数指图形是否经由缓存后再绘制在屏幕(Window/Screen)上。
+            //一般默认为NoScreenCache, 即不经过缓存直接绘制
+            screenDisplay.StartDrawing(screenDisplay.hDC, (System.Int16)esriScreenCache.esriNoScreenCache);
+            //实例化颜色对象
+            IRgbColor rgbColor = new RgbColorClass();
+            rgbColor.Red = 255;
+            IColor color = rgbColor;
+            //实例化符号(Symbol)对象
+            ISimpleLineSymbol simpleLineSymbol = new SimpleLineSymbolClass();
+            simpleLineSymbol.Color = color;
+            simpleLineSymbol.Width = 2;
+            ISymbol symbol = (ISymbol)simpleLineSymbol;
+            screenDisplay.SetSymbol(symbol);
+            screenDisplay.DrawPolyline(geometry);
+            screenDisplay.FinishDrawing();
+
+
+
+        }
+        /// <summary>
+        /// 鹰眼地图的OnMouseDown事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void axMapControl2_OnMouseDown(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMouseDownEvent e)
+        {
+            if (axMapControl2.LayerCount > 0)
+            {
+                //如果e.button==1, 则表示按下的是鼠标左键
+                if (e.button == 1)
+                {
+                    axMapControl2.Refresh();
+                    //捕捉鼠标单击时的地图坐标
+                    IPoint pPoint = new PointClass();
+                    pPoint.PutCoords(e.mapX, e.mapY);
+                    //将地图的中心点移动到鼠标点击的点pPoint
+                    axMapControl1.CenterAt(pPoint);
+                    axMapControl1.ActiveView.PartialRefresh(esriViewDrawPhase.esriViewGeography, null, null);
+                }
+                else if (e.button == 2)
+                {//如果e.button==2, 则表示按下的是鼠标右键
+                    //鹰眼地图的TrackRectangle()方法, 随着鼠标拖动得到一个矩形框
+                    IEnvelope pEnvelope = axMapControl2.TrackRectangle();
+                    axMapControl1.Extent = pEnvelope;//鼠标拖动生成的矩形框范围
+                    axMapControl1.ActiveView.PartialRefresh(esriViewDrawPhase.esriViewGeography, null, null);
+                }
+            }
+        }
+        /// <summary>
+        /// 加载
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AddShpFiletoolStripLabel3_Click(object sender, EventArgs e)
+        {
+            loadMapDoc2();
+        }
+        /// <summary>
+        /// 鹰眼地图的OnMouseMove事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void axMapControl2_OnMouseMove(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMouseMoveEvent e)
+        {
+            /*
+            //如果e.button==1, 则表示按下的是鼠标左键
+            if (e.button == 1)
+            {
+                axMapControl2.Refresh();
+                //捕捉鼠标单击时的地图坐标
+                IPoint pPoint = new PointClass();
+                pPoint.PutCoords(e.mapX, e.mapY);
+                //将地图的中心点移动到鼠标点击的点pPoint
+                axMapControl1.CenterAt(pPoint);
+                axMapControl1.ActiveView.PartialRefresh(esriViewDrawPhase.esriViewGeography, null, null);
+            }
+            */
+        }
+
+        #region 加载mxd地图文档
+        private void 加载mxd地图文档toolStripLabel1_Click(object sender, EventArgs e)
+        {
+            //方法一：
+            //loadMapDoc1();//调用MapControl控件的LoadMxFile方法
+
+            //方法二：
+            loadMapDoc2();
+        }
+        /// <summary>
+        /// 方法二：运用MapDocument对象中的Open方法的函数加载mxd文档
+        /// </summary>
+        private void loadMapDoc2()
+        {
+            IMapDocument mapDocument = new MapDocumentClass();
+            try
+            {
+                OpenFileDialog ofd = new OpenFileDialog();
+                ofd.Title = "打开地图文档";
+                ofd.Filter = "map documents(*.mxd)|*.mxd";
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = ofd.FileName;
+                    //filePath——地图文档的路径, ""——赋予默认密码
+                    mapDocument.Open(filePath, "");
+                    for (int i = 0; i < mapDocument.MapCount; i++)
+                    {
+                        //通过get_Map(i)方法逐个加载
+                        axMapControl1.Map = mapDocument.get_Map(i);
+                    }
+                    axMapControl1.Refresh();
+                }
+                else
+                {
+                    mapDocument = null;
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+
+        }
+
+        /// <summary>
+        /// 方法一：运用LoadMxFile方法的函数参数加载地图文档
+        /// </summary>
+        private void loadMapAccDoc1()
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "打开地图文档";
+            ofd.Filter = "map documents(*.mxd)|*.mxd";
+            ofd.InitialDirectory = m_Path;
+            //判断, 如果对话框结构不为OK, 退出函数体
+            DialogResult DR = ofd.ShowDialog();
+            if (DR != DialogResult.OK)
+                return;
+            string filePath = ofd.FileName;
+            if (axMapControl1.CheckMxFile(filePath))
+            {
+                //设置axMapControl控制鼠标指针图标选项为沙漏光标
+                axMapControl1.MousePointer = ESRI.ArcGIS.Controls.esriControlsMousePointer.esriPointerArrowHourglass;
+                //三个参数（filePath——文件路径、0——地址名称或索引、Type.Missing——通过反射进行调用获取参数的默认值）
+                axMapControl1.LoadMxFile(filePath, 0, Type.Missing);
+                //定义axMapControl控制鼠标指针图标为默认箭头
+                axMapControl1.MousePointer = ESRI.ArcGIS.Controls.esriControlsMousePointer.esriPointerDefault;
+                axMapControl1.Extent = axMapControl1.FullExtent;
+            }
+            else
+            {
+                MessageBox.Show(filePath + "不是有效的地图文档");
+            }
+        }
+        #endregion
+
     }
 }

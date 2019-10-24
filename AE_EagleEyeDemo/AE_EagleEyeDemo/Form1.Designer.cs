@@ -42,6 +42,7 @@
             this.axTOCControl1 = new ESRI.ArcGIS.Controls.AxTOCControl();
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.AddShpFiletoolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
             ((System.ComponentModel.ISupportInitialize)(this.axLicenseControl1)).BeginInit();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.axToolbarControl1)).BeginInit();
@@ -73,6 +74,7 @@
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripLabel1,
             this.toolStripLabel2,
+            this.AddShpFiletoolStripLabel3,
             this.toolStripButton1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
@@ -154,6 +156,8 @@
             this.axMapControl1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axMapControl1.OcxState")));
             this.axMapControl1.Size = new System.Drawing.Size(478, 304);
             this.axMapControl1.TabIndex = 0;
+            this.axMapControl1.OnExtentUpdated += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnExtentUpdatedEventHandler(this.axMapControl1_OnExtentUpdated);
+            this.axMapControl1.OnMapReplaced += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnMapReplacedEventHandler(this.axMapControl1_OnMapReplaced);
             // 
             // axMapControl2
             // 
@@ -163,6 +167,8 @@
             this.axMapControl2.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axMapControl2.OcxState")));
             this.axMapControl2.Size = new System.Drawing.Size(240, 152);
             this.axMapControl2.TabIndex = 0;
+            this.axMapControl2.OnMouseDown += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnMouseDownEventHandler(this.axMapControl2_OnMouseDown);
+            this.axMapControl2.OnMouseMove += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnMouseMoveEventHandler(this.axMapControl2_OnMouseMove);
             // 
             // axTOCControl1
             // 
@@ -188,6 +194,13 @@
             this.toolStripButton1.Size = new System.Drawing.Size(23, 22);
             this.toolStripButton1.Text = "toolStripButton1";
             // 
+            // AddShpFiletoolStripLabel3
+            // 
+            this.AddShpFiletoolStripLabel3.Name = "AddShpFiletoolStripLabel3";
+            this.AddShpFiletoolStripLabel3.Size = new System.Drawing.Size(32, 22);
+            this.AddShpFiletoolStripLabel3.Text = "加载";
+            this.AddShpFiletoolStripLabel3.Click += new System.EventHandler(this.AddShpFiletoolStripLabel3_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -199,7 +212,7 @@
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.axLicenseControl1);
             this.Name = "Form1";
-            this.Text = "鹰眼";
+            this.Text = "鹰眼案例";
             ((System.ComponentModel.ISupportInitialize)(this.axLicenseControl1)).EndInit();
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
@@ -237,6 +250,7 @@
         private ESRI.ArcGIS.Controls.AxMapControl axMapControl1;
         private System.Windows.Forms.ToolStripLabel toolStripLabel2;
         private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripLabel AddShpFiletoolStripLabel3;
     }
 }
 
