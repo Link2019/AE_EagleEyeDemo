@@ -75,7 +75,7 @@ namespace AE_EagleEyeDemo
             //使用面要素刷新(存在覆盖注释问题)
             //DrawPolyline2(pGraphicsContainer, pActiveView, pElement);
 
-            //使用点要素刷新(已解决重叠问题)(推荐使用)
+            //使用线要素刷新(已解决重叠问题)(推荐使用)
             //使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
             DrawPolyline(axMapControl2.ActiveView, pEnvelope);
 
@@ -88,36 +88,36 @@ namespace AE_EagleEyeDemo
         /// <param name="pElement"></param>
         private static void DrawPolyline2(IGraphicsContainer pGraphicsContainer, IActiveView pActiveView, IElement pElement)
         {
+            //以下代码设置要素外框边线的颜色、透明度属性
             IRgbColor pColor = new RgbColorClass();
             pColor.Red = 255;
             pColor.Green = 0;
             pColor.Blue = 0;
             pColor.Transparency = 255;
 
-            //new a line symbol object.
+            //以下代码设置要素外框边线的颜色、宽度属性
             ILineSymbol pOutline = new SimpleLineSymbolClass();
             pOutline.Width = 2;
             pOutline.Color = pColor;
-
             pColor = new RgbColorClass();
-            //背景颜色为空
             pColor.NullColor = true;
 
+            //以下代码设置要素内部的填充颜色、边线符号属性
             IFillSymbol pFillSymbol = new SimpleFillSymbolClass();
             pFillSymbol.Color = pColor;
             pFillSymbol.Outline = pOutline;
 
-            //area shape
+            //实现线框的生成
             IFillShapeElement pFillShapeElement = pElement as IFillShapeElement;
             pFillShapeElement.Symbol = pFillSymbol;
-
             pGraphicsContainer.AddElement((IElement)pFillShapeElement, 0);
+
             //刷新鹰眼视图的填充要素（绘图框）
             pActiveView.PartialRefresh(esriViewDrawPhase.esriViewGraphics, pFillShapeElement, null);
         }
 
         /// <summary>
-        /// 使用点要素刷新(已解决重叠问题)(推荐使用)
+        /// 使用线要素刷新(已解决重叠问题)(推荐使用)
         /// 使用IScreenDisplay的DrawPolyline方法,在鹰眼视图画出红线框
         /// </summary>
         /// <param name="activeView">鹰眼视图的活动窗体</param>
@@ -147,9 +147,6 @@ namespace AE_EagleEyeDemo
             screenDisplay.SetSymbol(symbol);
             screenDisplay.DrawPolyline(geometry);
             screenDisplay.FinishDrawing();
-
-
-
         }
         /// <summary>
         /// 鹰眼地图的OnMouseDown事件
@@ -231,6 +228,11 @@ namespace AE_EagleEyeDemo
 
         }
 
+        /// <summary>
+        /// 鹰眼地图的OnMouseMove事件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void axMapControl2_OnMouseMove(object sender, ESRI.ArcGIS.Controls.IMapControlEvents2_OnMouseMoveEvent e)
         {
             //如果e.button==1, 则表示按下的是鼠标左键
